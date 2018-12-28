@@ -651,6 +651,8 @@ so if we jump to plt.puts() to make it print *got.puts(),
 we should have the current puts() address in memory and we could deduce system()'s address by adding the correct offset.  
 we also need to call "win()" a second time, to enter a second shellcode after we leaked the info and made the calculation.  
 
+Much help from: https://github.com/ctfhacker/ctf-writeups/blob/master/campctf-2015/bitterman-pwn-400/README.md
+
 
 ```
 # get plt.puts
