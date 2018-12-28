@@ -2,21 +2,21 @@
 Santa is giving out an early XMAS-gift to all the good little hackers. Theres a secret backdoor to the PWNSHOP but its protected by a very paranoid lock that automatically changes keycodes often. If we could hack
 that, we could grab as many XMAS-gifts as we wanted!
 
-Solves: 69
-Service: nc 18.205.93.120 1205
-Download: T2CytbnZ9lShvuOBkDkpqLB6tjPDCvfa-pwnshop.tar.gz
-Author: likvidera
-
-
+Solves: 69  
+Service: nc 18.205.93.120 1205  
+Download: T2CytbnZ9lShvuOBkDkpqLB6tjPDCvfa-pwnshop.tar.gz  
+Author: likvidera  
+  
+  
 Please note that i'm a beginner:
 - so some of the information below might be innacurate or useless.
 - It was also my first time using IDA so excuse the verbosity... (I need it for myself for future reference ;-)
 - my ASM is pretty bad
 - i never used pwntools before
-
+  
 This is just what happened to me when i solved this challenge.
-
-
+  
+  
 ## Initial Discovery
 
 we're given a network service and an archive containing a libc.so file.
@@ -31,7 +31,7 @@ SANTAS PWNSHOP
  > 
 ```
 
-if we enter 2, we quit, if we enter 1, we get a base64 encoded payload.
+if we enter 2, we quit, if we enter 1, we get a base64 encoded payload.  
 If we wait 15 or so seconds, we get a timeout message
 
 ```
@@ -191,11 +191,11 @@ Aha! You found Santas secret backdoor to the PWNSHOP ... hope you know the keyco
 SANTAS PWNSHOP
 ```
 
-so let's try to find it...
-i used the free version of IDA here.
+so let's try to find it...  
+i used the free version of IDA here.  
 
-Open the binary in IDA, press shift+F12 to display the strings, then CTRL+F to find "Secret"
-Select it and press ENTER to go back to the code window
+Open the binary in IDA, press shift+F12 to display the strings, then CTRL+F to find "Secret"  
+Select it and press ENTER to go back to the code window  
 
 ```
 .rodata:0804AC9C aAhaYouFoundSan db 0Ah                  ; DATA XREF: pwnshop_backdoor+15↑o
@@ -228,8 +228,8 @@ double click the DATA XREF to follow it, you end up in the "pwnshop_backdoor" pr
 .text:08048787                 jmp     short loc_80487B3
 ```
 
-following the "CODE XREF", shows that this function is called by the "menu" function.
-
+following the "CODE XREF", shows that this function is called by the "menu" function.  
+  
 (interesting part of the menu function)
 
 ```
@@ -262,8 +262,8 @@ following the "CODE XREF", shows that this function is called by the "menu" func
 .text:08048932                 nop
 ```
 
-seems there's an "hidden" menu entry we can trigger by typing 666.
-You need to enter 16 codes:
+seems there's an "hidden" menu entry we can trigger by typing 666.  
+You need to enter 16 codes:  
 
 ```
 SANTAS PWNSHOP
@@ -294,8 +294,8 @@ Enter keycode 15: 4
 
 ## Figuring the 16 codes
 
-let's look at the code of the pwnshop_backdoor func.
-
+let's look at the code of the pwnshop_backdoor func.  
+  
 The first parts reads 16 integer
 
 ```
@@ -412,7 +412,7 @@ The 2nd part checks them:
 .text:080488D6                 call    _exit
 ```
 
-it's basically checking each input values against some hardcoded constant.
+it's basically checking each input values against some hardcoded constant.  
 There's 2 kind of checks:
 
 ```
@@ -420,16 +420,16 @@ There's 2 kind of checks:
 .text:0804886A                 jnz     short loc_80488BF
 ```
 
-which jumps to loc_80488BF (access denied) if the value of EAX is not 0x4D3AB4
+which jumps to loc_80488BF (access denied) if the value of EAX is not 0x4D3AB4  
 and
 
 ```
 .text:0804888C                 test    eax, eax
 .text:0804888E                 jz      short loc_80488BF
 ```
-which jumps to access denied if EAX is 0 (so it needs to be anything except 0)
-
-
+which jumps to access denied if EAX is 0 (so it needs to be anything except 0)  
+  
+  
 following can be translated to pseudocode like:
 
 ```
@@ -591,10 +591,10 @@ info("offset = %d", offset)
 [*] offset = 16
 ```
 
-se we need to 16 bytes of data before we can overwrite EIP.
-also we see in the process that NX is activated, so cannot just push some code into the stack...
-
-
+se we need to 16 bytes of data before we can overwrite EIP.  
+also we see in the process that NX is activated, so cannot just push some code into the stack...  
+  
+  
 The libc is provided, so i first thought about some ret2libc, which worked locally only if i disabled ASLR
 ```
 % echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
@@ -607,11 +607,11 @@ since it's remote, i decided not to waste time on this and enabled it again:
 ```
 
 
-i spent some time reading [https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/] and got convinced i needed to overwrite the GOT entry.
-
-PLT stands for Procedure Linkage Table which is, put simply, used to call external procedures/functions whose address isn't known in the time of linking, and is left to be resolved by the dynamic linker at run time.
-GOT stands for Global Offsets Table and is similarly used to resolve addresses.
-
+i spent some time reading [https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/] and got convinced i needed to overwrite the GOT entry.  
+  
+PLT stands for Procedure Linkage Table which is, put simply, used to call external procedures/functions whose address isn't known in the time of linking, and is left to be resolved by the dynamic linker at run time.  
+GOT stands for Global Offsets Table and is similarly used to resolve addresses.  
+  
 ([https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got])
 
 
@@ -636,19 +636,19 @@ Symbol table '.dynsym' contains 14 entries:
     13: 08048abc     4 OBJECT  GLOBAL DEFAULT   16 _IO_stdin_used
 ```
 
-maybe i could change "alarm" to call "system" for example.
-i'm a loser a quickly got discouraged by the apparent complexity of it, until i heard about "information leakage".
-
-The libc was kindly provided and we know (at least,, know i do), that wherever the libc is loaded in memory, the offsets between 2 given functions will always be the same.
-So if we could remotely leak the address of a libc given function, we could calculate the address of "system"..
-
-
-TL;DR: apparently:
+maybe i could change "alarm" to call "system" for example.  
+i'm a loser a quickly got discouraged by the apparent complexity of it, until i heard about "information leakage".  
+  
+The libc was kindly provided and we know (at least,, know i do), that wherever the libc is loaded in memory, the offsets between 2 given functions will always be the same.  
+So if we could remotely leak the address of a libc given function, we could calculate the address of "system"..  
+  
+  
+TL;DR: apparently:  
 - PLT contains code to resolve library function addresses
 - GOT contains those resolved addresses
-
-so if we jump to plt.puts() to make it print *got.puts(), then we should have the current puts() address in memory and we can deduce system() address by adding the correct offset.
-we also need to call "win()" a second time, to enter a second shellcode after we leaked the info and made the calculation.
+  
+so if we jump to plt.puts() to make it print *got.puts(), then we should have the current puts() address in memory and we can deduce system() address by adding the correct offset.  
+we also need to call "win()" a second time, to enter a second shellcode after we leaked the info and made the calculation.  
 
 
 ```
@@ -669,10 +669,10 @@ we also need to call "win()" a second time, to enter a second shellcode after we
 
 ```
 
-so if we can call 0x08048450(*0x0804d01c), we should leak the address of puts.
-Im still quiet unsure why we need to "pop xyz; ret"; but otherwise it doesnt work
-
-we can find such "gadget":
+so if we can call 0x08048450(*0x0804d01c), we should leak the address of puts.  
+Im still quiet unsure why we need to "pop xyz; ret"; but otherwise it doesnt work  
+  
+we can find such "gadget":  
 
 ```
 % ROPgadget --binary gift | egrep "pop ... ; ret"
@@ -682,7 +682,7 @@ we can find such "gadget":
 
 ```
 
-so our stack needs to be like this:
+so our stack needs to be like this:  
 ```
 +---------------------------+
 | 0x08048450     plt.puts() |
@@ -775,13 +775,13 @@ f\x84\x0 �Z�aY�
 
 ## Exploiting the win function (Part 1)
 
-now that we can leak some libc function's address and return to win() to enter more fancy stuff, we can
-craft something that should do:
-
-system("/bin/sh");
-exit();
-
-luckily everything can be found in the libc:
+now that we can leak some libc function's address and return to win() to enter more fancy stuff, we can  
+craft something that should do:  
+  
+system("/bin/sh");  
+exit();  
+  
+luckily everything can be found in the libc:  
 
 ```
 % gdb-peda ./gift
@@ -825,10 +825,10 @@ so if we can make our stack look like this:
 +----------------------------------+
 ```
 
-we should get a shell...
+we should get a shell...  
 
 
-we can simply extend of script:
+we can simply extend of script:  
 
 ```
 % cat exploit_v3.py
@@ -874,10 +874,10 @@ $ pwd
 
 ## Putting it all together
 
-Since the binary changes with each new connection, the final part was to put everything together.
-Most of the work is already done for the remote shell, but we need to extract the codes.
-
-for this i used distorm3, probably in the most horrible possible way, but it works...
+Since the binary changes with each new connection, the final part was to put everything together.  
+Most of the work is already done for the remote shell, but we need to extract the codes.  
+  
+for this i used distorm3, probably in the most horrible possible way, but it works...  
 
 
 ```
