@@ -609,10 +609,10 @@ since it's remote, i decided not to waste time on this and enabled it again:
 
 i spent some time reading [https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/] and got convinced i needed to overwrite the GOT entry.  
   
-PLT stands for Procedure Linkage Table which is, put simply, used to call external procedures/functions whose address isn't known in the time of linking, and is left to be resolved by the dynamic linker at run time.  
-GOT stands for Global Offsets Table and is similarly used to resolve addresses.  
+- PLT stands for Procedure Linkage Table which is, put simply, used to call external procedures/functions whose address isn't known in the time of linking, and is left to be resolved by the dynamic linker at run time.  
+- GOT stands for Global Offsets Table and is similarly used to resolve addresses.  
   
-([https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got])
+(https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got)
 
 
 ```
