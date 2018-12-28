@@ -639,7 +639,7 @@ Symbol table '.dynsym' contains 14 entries:
 maybe i could change "alarm" to call "system" for example.  
 i'm a loser a quickly got discouraged by the apparent complexity of it, until i heard about "information leakage".  
   
-The libc was kindly provided and we know (at least,, know i do), that wherever the libc is loaded in memory, the offsets between 2 given functions will always be the same.  
+The libc was kindly provided and we know (at least,, know i do), that wherever the libc is loaded in memory, the offset between 2 given functions will always be the same.  
 So if we could remotely leak the address of a libc given function, we could calculate the address of "system"..  
   
   
@@ -647,20 +647,23 @@ TL;DR: apparently:
 - PLT contains code to resolve library function addresses
 - GOT contains those resolved addresses
   
-so if we jump to plt.puts() to make it print *got.puts(), then we should have the current puts() address in memory and we can deduce system() address by adding the correct offset.  
+so if we jump to plt.puts() to make it print *got.puts(),  
+we should have the current puts() address in memory and we could deduce system()'s address by adding the correct offset.  
 we also need to call "win()" a second time, to enter a second shellcode after we leaked the info and made the calculation.  
 
 
 ```
-
 # get plt.puts
-
 
 % objdump -d gift| grep puts@plt
 08048450 <puts@plt>:
 
+
+# get win()
+
 % objdump -d gift| grep win 
 08048703 <win>:
+
 
 # get got.puts
 
@@ -773,10 +776,9 @@ f\x84\x0 �Z�aY�
 ```
 
 
-## Exploiting the win function (Part 1)
+## Exploiting the win function (Part 2)
 
-now that we can leak some libc function's address and return to win() to enter more fancy stuff, we can  
-craft something that should do:  
+Now that we can leak some libc function's address and return to win() to enter more fancy stuff, we can craft something that should do:  
   
 system("/bin/sh");  
 exit();  
