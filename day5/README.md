@@ -197,7 +197,7 @@ i used the free version of IDA here.
 Open the binary in IDA, press shift+F12 to display the strings, then CTRL+F to find "Secret"  
 Select it and press ENTER to go back to the code window  
 
-```
+```x86asm
 .rodata:0804AC9C aAhaYouFoundSan db 0Ah                  ; DATA XREF: pwnshop_backdoor+15↑o
 .rodata:0804AC9C                 db 'Aha! You found Santas secret backdoor to the PWNSHOP ... hope you'
 .rodata:0804AC9C                 db ' know the keycodes',0
@@ -206,7 +206,7 @@ Select it and press ENTER to go back to the code window
 
 double click the DATA XREF to follow it, you end up in the "pwnshop_backdoor" proc (press SPACE to toggle between code and graph view)
 
-```
+```x86asm
 .text:0804875C                 public pwnshop_backdoor
 .text:0804875C pwnshop_backdoor proc near              ; CODE XREF: menu:loc_804892D↓p
 .text:0804875C
@@ -232,18 +232,18 @@ following the "CODE XREF", shows that this function is called by the "menu" func
   
 (interesting part of the menu function)
 
-```
+```x86asm
 .text:080488F9 loc_80488F9:                            ; CODE XREF: menu:loc_8048933↓j
 .text:080488F9                 call    print_menu
-.text:080488FE                 call    get_int				< read an integer into EAX
+.text:080488FE                 call    get_int              ;read an integer into EAX
 .text:08048903                 mov     [ebp+var_C], eax
 .text:08048906                 mov     eax, [ebp+var_C]
-.text:08048909                 cmp     eax, 2				< if EAX == 2
-.text:0804890C                 jz      short loc_8048923    < 	exit();
-.text:0804890E                 cmp     eax, 29Ah			< if EAX == 666
-.text:08048913                 jz      short loc_804892D	< 	pwnshop_backdoor()
-.text:08048915                 cmp     eax, 1				< if EAX == 1
-.text:08048918                 jz      short loc_804891C	< 	pwn(); // show the base64 payload
+.text:08048909                 cmp     eax, 2               ; if EAX == 2
+.text:0804890C                 jz      short loc_8048923    ;   exit();
+.text:0804890E                 cmp     eax, 29Ah            ; if EAX == 666
+.text:08048913                 jz      short loc_804892D    ;   pwnshop_backdoor()
+.text:08048915                 cmp     eax, 1               ; if EAX == 1
+.text:08048918                 jz      short loc_804891C    ;   pwn(); // show the base64 payload
 .text:0804891A                 jmp     short loc_8048933
 .text:0804891C ; ---------------------------------------------------------------------------
 .text:0804891C
@@ -298,7 +298,7 @@ let's look at the code of the pwnshop_backdoor func.
   
 The first parts reads 16 integer
 
-```
+```x86asm
 .text:08048771                 lea     eax, (aAhaYouFoundSan - 804D000h)[ebx] ; "\nAha! You found Santas secret backdoor"...
 .text:08048777                 push    eax
 .text:08048778                 call    _puts
@@ -340,7 +340,7 @@ while x <= 0x0F:
 
 The 2nd part checks them:
 
-```
+```x86asm
 .text:080487B9                 mov     eax, ds:(keycode - 804D000h)[ebx]
 .text:080487BF                 cmp     eax, 61F55Ch
 .text:080487C4                 jnz     loc_80488BF
@@ -506,7 +506,7 @@ zsh: segmentation fault  ./gift
 
 the win() function just prints the message and reads some data from stdin into a buffer of i-dont-know-how-many bytes (because my assembly is bad), but which is apprently subject to a buffer overflow...
 
-```
+```x86asm
 .text:0804871F                 lea     eax, (a032maccessGran - 804D000h)[ebx] ; "[\x1B[0;32mACCESS GRANTED\x1B[0m]"
 .text:08048725                 push    eax
 .text:08048726                 call    _puts
@@ -531,7 +531,7 @@ the win() function just prints the message and reads some data from stdin into a
 
 ## Exploiting the win function (Part 1)
 
-we can use the following piece of code to find how many bytes we need to overwrite EIP:
+we can use the following piece of code to find how many bytes we need to overwrite EIP [exploit_v1.py](exploit_v1.py):
 
 
 ```python
@@ -613,7 +613,8 @@ i spent some time reading [https://sploitfun.wordpress.com/2015/05/08/bypassing-
 - PLT stands for Procedure Linkage Table which is, put simply, used to call external procedures/functions whose address isn't known in the time of linking, and is left to be resolved by the dynamic linker at run time.  
 - GOT stands for Global Offsets Table and is similarly used to resolve addresses.  
   
-(https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got)
+[https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got](https://reverseengineering.stackexchange.com/questions/1992/what-is-plt-got)  
+[https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html](https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html)
 
 
 ```
@@ -652,7 +653,7 @@ so if we jump to plt.puts() to make it print *got.puts(),
 we should have the current puts() address in memory and we could deduce system()'s address by adding the correct offset.  
 we also need to call "win()" a second time, to enter a second shellcode after we leaked the info and made the calculation.  
 
-Much help from: https://github.com/ctfhacker/ctf-writeups/blob/master/campctf-2015/bitterman-pwn-400/README.md
+Much help from: [https://github.com/ctfhacker/ctf-writeups/blob/master/campctf-2015/bitterman-pwn-400/README.md](https://github.com/ctfhacker/ctf-writeups/blob/master/campctf-2015/bitterman-pwn-400/README.md)
 
 
 ```
@@ -701,7 +702,7 @@ so our stack needs to be like this:
 +---------------------------+
 ```
 
-makes some code like this:
+makes some code like this [exploit_v2.py](exploit_v2.py):
 
 ```python
 % cat exploit_v2.py 
@@ -827,7 +828,7 @@ so if we can make our stack look like this:
 we should get a shell...  
 
 
-we can simply extend of script:  
+we can simply extend of script [exploit_v3.py](exploit_v3.py):  
 
 ```python
 % cat exploit_v3.py
@@ -941,7 +942,7 @@ print get_codes(open("./gift", 'rb').read())
 ```
 
 
-the final exploit is here as [pwnpwn.py]
+the final exploit is here as [pwnpwn.py](pwnpwn.py)
 
 ```
 % ./pwnpwn.py
