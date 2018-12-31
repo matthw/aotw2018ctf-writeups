@@ -141,7 +141,7 @@ cxBPAAA=
 requesting the gift multiple times within the same session always return the same data, but making a new connection will return a different payload.
 
 ```
-% base64 -d payload > decoded.gz
+% base64 -d payload > gift.gz
 % file gift.gz 
 gift.gz: gzip compressed data, last modified: Fri Dec 28 06:34:36 2018, from Unix
 % gunzip gift.gz 
@@ -296,7 +296,7 @@ Enter keycode 15: 4
 
 let's look at the code of the pwnshop_backdoor func.  
   
-The first parts reads 16 integer
+The first part reads 16 integers
 
 ```x86asm
 .text:08048771                 lea     eax, (aAhaYouFoundSan - 804D000h)[ebx] ; "\nAha! You found Santas secret backdoor"...
@@ -412,7 +412,7 @@ The 2nd part checks them:
 .text:080488D6                 call    _exit
 ```
 
-it's basically checking each input values against some hardcoded constant.  
+it's basically checking each input values against some hardcoded constants.  
 There's 2 kind of checks:
 
 ```
